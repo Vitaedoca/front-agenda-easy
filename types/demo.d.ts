@@ -127,15 +127,22 @@ declare namespace Demo {
         professionalId: number;
       };
 
-      type Appointments = {
-        id: number,
-        userName: string,
-        professionalName: string,
-        serviceName: string,
-        appointmentDate: string,
-        status: string,
-        horario: string
-      };
+    type Appointments = {
+    id: number,
+    userName: string,
+    professionalName: string,
+    serviceName: string,
+    appointmentDate: string,
+    status: string,
+    horario: string
+    };
+
+    type Auth = {
+        name?: string,
+        email: string,
+        password: string,
+        role?: string
+    }
 
     //ProductService
     type Professional = {

@@ -13,7 +13,8 @@ import { Toolbar } from 'primereact/toolbar';
 import { classNames } from 'primereact/utils';
 import React, { useEffect, useRef, useState } from 'react';
 import { Demo } from '@/types';
-import { professionalService } from '@/service/ProfessionalService';
+import { ProfessionalService } from '@/service/ProfessionalService';
+import { error } from 'console';
 
 /* @todo Used 'as any' for types here. Will fix in next version due to onSelectionChange event type issue. */
 const Profissionais = () => {
@@ -38,17 +39,16 @@ const Profissionais = () => {
     const toast = useRef<Toast>(null);
     const dt = useRef<DataTable<any>>(null);
 
-    const MyComponent = () => {
-        
-            useEffect(() => {
-                const service = new professionalService();
-                service.listarTodos()
-                    .then(response => setProfessionals(response.data))
-                    .catch(error => console.log(error));
-            }, []);
-    }
-   
-    MyComponent();
+    const service = new ProfessionalService();
+    
+    useEffect(() => {
+        service.listarTodos()
+            .then( response => {
+                setProfessionals(response.data)
+                console.log(response.data)
+            }).catch(error => console.log(error))
+    }, [])
+    
 
     const openNew = () => {
         setProfessional(emptyProfessional);
@@ -75,12 +75,13 @@ const Profissionais = () => {
         // Verifica se o campo "name" está preenchido antes de prosseguir
         if (professional.name.trim()) {
             let _professional = { ...professional };
-            const service = new professionalService();
+            const service = new ProfessionalService();
     
             try {
                 if (_professional.id) {
                     // Atualiza um profissional existente
                     await service.editar(_professional);
+                    console.log(_professional);
                     toast.current?.show({
                         severity: 'success',
                         summary: 'Sucesso',
@@ -118,6 +119,7 @@ const Profissionais = () => {
                 setProfessionalDialog(false);
                 setProfessional(emptyProfessional);
             } catch (error) {
+                console.log(_professional.id)
                 console.error("Erro ao salvar profissional:", error);
                 toast.current?.show({
                     severity: 'error',
@@ -128,9 +130,6 @@ const Profissionais = () => {
             }
         }
     };
-    
-    
-    
     
     
     const editProduct = (professional: Demo.Professional) => {
@@ -146,8 +145,8 @@ const Profissionais = () => {
     const deleteProduct = async () => {
         try {
             // Chama o serviço para deletar o profissional no backend
-            const service = new professionalService();
-            await service.deletar(professional); 
+            const service = new ProfessionalService();
+            await service.deletar(professional.id as any); 
             console.log(professional)
     
             // Atualiza a lista local após a exclusão

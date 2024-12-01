@@ -15,7 +15,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Demo } from '@/types';
 import { serviceService } from '@/service/ServicesService';
 import { InputTextarea } from 'primereact/inputtextarea';
-import { professionalService } from '@/service/ProfessionalService';
+import { ProfessionalService } from '@/service/ProfessionalService';
 import { Dropdown } from 'primereact/dropdown';
 
 /* @todo Used 'as any' for types here. Will fix in next version due to onSelectionChange event type issue. */
@@ -45,7 +45,7 @@ const Profissionais = () => {
     const [profissionais, setProfissionais] = useState<{ name: string; id: number }[]>([]);
 
     useEffect(() => {
-        const service = new professionalService();
+        const service = new ProfessionalService();
         service.listarTodos()
             .then(response => setProfissionais(response.data))
             .catch(error => console.log(error));
@@ -161,7 +161,7 @@ const Profissionais = () => {
         try {
             // Chama o serviço para deletar o serviço no backend
             const serviceApi = new serviceService();
-            await serviceApi.deletar(service); // Passa o ID do serviço a ser deletado
+            await serviceApi.deletar(service.id as any); // Passa o ID do serviço a ser deletado
     
             console.log(service.id)
             // Atualiza a lista local após a exclusão

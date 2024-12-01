@@ -5,6 +5,7 @@ import { classNames } from 'primereact/utils';
 import React, { forwardRef, useContext, useImperativeHandle, useRef } from 'react';
 import { AppTopbarRef } from '@/types';
 import { LayoutContext } from './context/layoutcontext';
+import Cookies from 'js-cookie';
 
 const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
     const { layoutConfig, layoutState, onMenuToggle, showProfileSidebar } = useContext(LayoutContext);
@@ -17,6 +18,10 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
         topbarmenu: topbarmenuRef.current,
         topbarmenubutton: topbarmenubuttonRef.current
     }));
+
+    const logout = () => {
+        Cookies.remove("auth_token");
+    }
 
     return (
         <div className="layout-topbar">
@@ -48,6 +53,12 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
                         <span>Settings</span>
                     </button>
                 </Link>
+                <a href="/" onClick={() => logout()}>
+                    <button type="button" className="p-link layout-topbar-button">
+                        <i className="pi pi-sign-out"></i>
+                        <span>Settings</span>
+                    </button>
+                </a>
             </div>
         </div>
     );

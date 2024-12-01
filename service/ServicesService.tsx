@@ -1,26 +1,10 @@
-import { Demo } from "@/types";
-import axios from "axios";
-
-export const axiosInstance = axios.create
-({
-    baseURL: 'http://localhost:8080',
-})
+import { BaseService } from "./BaseService";
 
 
-export class serviceService {
-    listarTodos() {
-        return axiosInstance.get('/services')
+export class serviceService extends BaseService {
+
+    constructor(){
+        super("/specialties");
     }
 
-    inserir(services: Demo.Services) {
-        return axiosInstance.post("/services", services)
-    }
-
-    editar(professional: Demo.Services) {
-        return axiosInstance.put(`/services/${professional.id}`, professional)    
-    }
-
-    deletar(professional: Demo.Services) {
-        return axiosInstance.delete(`/services/${professional.id}`); 
-    }
 }
