@@ -1,4 +1,5 @@
 'use client';
+
 import { addLocale } from 'primereact/api';
 import React, { useState, useEffect } from 'react';
 import { Calendar } from 'primereact/calendar';
@@ -9,6 +10,10 @@ import ProfessionalComponent from '../components/professional';
 
 import 'pure-react-carousel/dist/react-carousel.es.css';
 import { Dialog } from 'primereact/dialog';
+import Cookies from 'js-cookie';
+import { jwtDecode } from "jwt-decode";
+import { Avatar } from 'primereact/avatar';
+import { authService } from '@/service/AuthService';
 
 const LandingPage = () => {
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -19,12 +24,35 @@ const LandingPage = () => {
     const [professionals, setProfessionals] = useState<any[]>([]);
     const [services, setServices] = useState<any[]>([]);
     const [availableTimes, setAvailableTimes] = useState<string[]>([]);
+    const [appointments, setAppointments] = useState<any[]>([]);
+    const [isAppointmentsVisible, setIsAppointmentsVisible] = useState(false);
     const [dialogVisible, setDialogVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
 
+    const service = new authService();
 
-    // Função para carregar serviços
+    // Fetch appointments
+    const fetchAppointments = async () => {
+        try {
+            const token = Cookies.get("auth_token");
+            const decodedToken: { id: number } = jwtDecode(token as string);
+            const userId = decodedToken.id;
+
+            const response = await axios.get(`http://localhost:8080/appointments/user/${userId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            setAppointments(response.data);
+        } catch (error) {
+            console.error('Erro ao carregar agendamentos:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchAppointments();
+    }, []);
+
     const fetchServices = async () => {
         try {
             const serviceResponse = await axios.get('http://localhost:8080/specialties');
@@ -34,7 +62,6 @@ const LandingPage = () => {
         }
     };
 
-    // Função para carregar profissionais com base no serviço selecionado
     const fetchProfessionalsByService = async (serviceId: number) => {
         try {
             const response = await axios.get(`http://localhost:8080/professional/service/${serviceId}`);
@@ -44,7 +71,6 @@ const LandingPage = () => {
         }
     };
 
-    // Função para carregar horários disponíveis
     const fetchAvailableTimes = async () => {
         if (!selectedDate || !selectedProfessional) return;
 
@@ -58,19 +84,16 @@ const LandingPage = () => {
         }
     };
 
-    // Atualizar horários disponíveis sempre que filtros mudarem
     useEffect(() => {
         if (selectedDate && selectedProfessional) {
             fetchAvailableTimes();
         }
     }, [selectedDate, selectedProfessional]);
 
-    // Carregar serviços ao montar o componente
     useEffect(() => {
         fetchServices();
     }, []);
 
-    // Atualizar profissionais sempre que o serviço selecionado mudar
     useEffect(() => {
         if (selectedService) {
             fetchProfessionalsByService(selectedService.id);
@@ -84,116 +107,90 @@ const LandingPage = () => {
         setSelectedTime(null);
     };
 
-    // Função para calcular o timeEnd baseado no timeStart (adicionando 30 minutos)
     const calculateEndTime = (timeStart: string): string => {
         const [hours, minutes] = timeStart.split(':').map(Number);
         const startDate = new Date();
         startDate.setHours(hours, minutes, 0, 0);
-    
-        // Adicionar 30 minutos
         startDate.setMinutes(startDate.getMinutes() + 30);
-    
-        // Formatar a data para o formato HH:mm
+
         const endHours = String(startDate.getHours()).padStart(2, '0');
         const endMinutes = String(startDate.getMinutes()).padStart(2, '0');
         return `${endHours}:${endMinutes}`;
     };
 
     const formatDate = (date: Date): string => {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // Os meses começam do 0, por isso +1
-    const year = date.getFullYear();
-    
-    return `${day}/${month}/${year}`;
-};
-    
-const handleSchedule = async () => {
-    if (!selectedDate || !selectedProfessional || !selectedService || !selectedTime) {
-        alert('Por favor, preencha todos os campos!');
-        return;
-    }
-
-    // Iniciar carregamento
-    setIsLoading(true);
-
-    // Calcular timeStart e timeEnd
-    const timeStart = selectedTime;
-    const timeEnd = calculateEndTime(selectedTime);
-
-    const formattedDate = selectedDate ? formatDate(selectedDate) : '';
-
-    const appointmentData = {
-        userId: 2, // Ajuste conforme necessário
-        professionalId: selectedProfessional.id,
-        serviceId: selectedService.id,
-        appointmentDate: formattedDate, // Usar a data formatada
-        timeStart: timeStart,
-        timeEnd: timeEnd,
-        status: 'A', // Status sempre será "A"
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${year}-${month}-${day}`;
     };
 
-    console.log(appointmentData);
+    const handleSchedule = async () => {
+        if (!selectedDate || !selectedProfessional || !selectedService || !selectedTime) {
+            alert('Por favor, preencha todos os campos!');
+            return;
+        }
 
-    try {
-        // Simular delay de 3 segundos
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        const formattedDate = formatDate(selectedDate);
+        const existingAppointment = appointments.find(appointment =>
+            appointment.appointmentDate === formattedDate &&
+            appointment.timeStart === selectedTime
+        );
 
-        // Realizar o POST no servidor
-        await axios.post('http://localhost:8080/appointments', appointmentData);
-        setIsSuccess(true); 
-        fetchAvailableTimes();
-        setSelectedService(null);
-        setSelectedProfessional(null);
-    } catch (error) {
-        console.error('Erro ao realizar agendamento:', error);
-        alert('Erro ao tentar realizar o agendamento.');
-    } finally {
-        // Finalizar carregamento
-        setIsLoading(false);
-    }
-};
+        if (existingAppointment) {
+            alert('Você já tem um agendamento neste horário.');
+            return;
+        }
 
+        const token = Cookies.get("auth_token");
+        if (!token) {
+            alert('Usuário não autenticado. Por favor, faça login.');
+            return;
+        }
 
+        const decodedToken: { id: number } = jwtDecode(token as string);
+        const userId = decodedToken.id;
+
+        setIsLoading(true);
+
+        const timeEnd = calculateEndTime(selectedTime);
+
+        const appointmentData = {
+            userId,
+            professionalId: selectedProfessional.id,
+            serviceId: selectedService.id,
+            appointmentDate: formattedDate,
+            timeStart: selectedTime,
+            timeEnd,
+            status: 'A',
+        };
+
+        try {
+            await axios.post('http://localhost:8080/appointments', appointmentData);
+            setIsSuccess(true);
+            fetchAppointments();
+        } catch (error) {
+            console.error('Erro ao realizar agendamento:', error);
+            alert('Erro ao tentar realizar o agendamento.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     addLocale('pt-BR', {
-        firstDayOfWeek: 0, // Domingo como primeiro dia da semana
+        firstDayOfWeek: 0,
         dayNames: ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'],
         dayNamesShort: ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'],
         dayNamesMin: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'],
         monthNames: [
-            'janeiro',
-            'fevereiro',
-            'março',
-            'abril',
-            'maio',
-            'junho',
-            'julho',
-            'agosto',
-            'setembro',
-            'outubro',
-            'novembro',
-            'dezembro',
+            'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
         ],
-        monthNamesShort: [
-            'jan',
-            'fev',
-            'mar',
-            'abr',
-            'mai',
-            'jun',
-            'jul',
-            'ago',
-            'set',
-            'out',
-            'nov',
-            'dez',
-        ],
+        monthNamesShort: ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'],
         today: 'Hoje',
         clear: 'Limpar',
     });
 
-    // Exibir o Dialog com o resumo do agendamento
-    const showDialog = () => {
+      const showDialog = () => {
         if (!selectedDate || !selectedProfessional || !selectedService || !selectedTime) {
             alert('Por favor, preencha todos os campos!');
             return;
@@ -205,6 +202,15 @@ const handleSchedule = async () => {
 
     return (
         <div>
+        <div>
+            <div className="flex justify-content-end p-3" style={{backgroundColor: 'rgba(255, 255, 255, 0.2)'}}>
+                <Avatar
+                    icon="pi pi-user"
+                    size="large"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setIsAppointmentsVisible(!isAppointmentsVisible)}
+                />
+            </div>
             <div
                 className="bg-no-repeat bg-cover z-0 rounded-xl overflow-hidden"
                 style={{
@@ -217,6 +223,7 @@ const handleSchedule = async () => {
                     backgroundImage: "url('/layout/images/image-principal.png')",
                 }}
             >
+                {/* Cabeçalho com ícone de usuário */}
                 <div
                     style={{
                         backgroundColor: 'var(--green-400)',
@@ -339,6 +346,32 @@ const handleSchedule = async () => {
                     </div>
                 )}
             </Dialog>
+
+
+                {/* Modal para exibir agendamentos */}
+                <Dialog
+                    header="Meus Agendamentos"
+                    visible={isAppointmentsVisible}
+                    style={{ width: '90vw' }}
+                    onHide={() => setIsAppointmentsVisible(false)}
+                >
+                    {appointments.length > 0 ? (
+                        <div className="flex flex-column gap-4">
+                            {appointments.map((appointment) => (
+                                <div key={appointment.id} className="border-1 p-3 rounded">
+                                    <h5>Serviço: {appointment.service.name}</h5>
+                                    <p>Profissional: {appointment.professional.name}</p>
+                                    <p>Data: {appointment.appointmentDate}</p>
+                                    <p>Hora: {appointment.timeStart} - {appointment.timeEnd}</p>
+                                    <p>Status: {appointment.status === 'A' ? 'Ativo' : 'Inativo'}</p>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p>Nenhum agendamento encontrado.</p>
+                    )}
+                </Dialog>
+            </div>
             </div>
         </div>
     );

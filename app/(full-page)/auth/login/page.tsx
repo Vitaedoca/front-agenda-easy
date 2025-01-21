@@ -12,6 +12,8 @@ import { Controller, useForm } from 'react-hook-form';
 import { authService } from '@/service/AuthService';
 import Cookies from 'js-cookie';
 import { Toast } from 'primereact/toast';
+import { jwtDecode } from 'jwt-decode';
+
 
 const LoginPage = () => {
     const [password, setPassword] = useState('');
@@ -33,36 +35,39 @@ const LoginPage = () => {
     const toast = useRef<Toast>(null);
 
     const loginHandle = async (data: formValues) => {
-        // Imprime todos os valores do formulário no console
         try {
-            // Envia os dados para o método `register` do serviço
+            // Envia os dados para o método `login` do serviço
             const response = await service.login(data);
-
-
-            console.log(response.data.token);
-
+    
             const token = response.data.token;
-
-            Cookies.set("auth_token", token, { expires: 7});
-
-            router.push('/');
-
+    
+            // Decodifica o token para extrair a role
+            const decodedToken: { role: string } = jwtDecode(token);
+    
+            Cookies.set("auth_token", token, { expires: 7 });
+    
+            // Redireciona com base na role
+            if (decodedToken.role === 'ADMIN') {
+                router.push('/');
+            } else if (decodedToken.role === 'USER') {
+                router.push('/landing');
+            }
+    
+            // Recarrega a página para atualizar o estado do aplicativo
             window.location.reload();
         } catch (error) {
-
             toast.current?.show({
                 severity: 'error',
                 summary: 'Erro!',
                 detail: 'Login ou senha estão inválidos!'
-            })
-
+            });
+    
             reset({
                 email: '',
                 password: ''
-            })
+            });
         }
-    }
-
+    };
 
     const containerClassName = classNames('surface-ground flex align-items-center justify-content-center min-h-screen min-w-screen overflow-hidden', { 'p-input-filled': layoutConfig.inputStyle === 'filled' });
 
@@ -71,7 +76,7 @@ const LoginPage = () => {
             <Toast ref={toast}/>
             <div className={containerClassName}>
                 <div className="flex flex-column align-items-center justify-content-center">
-                    <img src={`/layout/images/logo-${layoutConfig.colorScheme === 'light' ? 'dark' : 'white'}.svg`} alt="Sakai logo" className="mb-5 w-6rem flex-shrink-0" />
+                    {/* <img src={`/layout/images/logo-${layoutConfig.colorScheme === 'light' ? 'dark' : 'white'}.svg`} alt="Sakai logo" className="mb-5 w-6rem flex-shrink-0" /> */}
                     <div
                         style={{
                             borderRadius: '56px',

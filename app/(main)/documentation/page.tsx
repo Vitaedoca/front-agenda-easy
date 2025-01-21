@@ -153,7 +153,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                         <pre className="app-code">
                             <code>
                                 {`import { Metadata } from 'next';
-import AppConfig from "../../layout/AppConfig";
+// import profissionais from "../../layout/profissionais";
 import React from "react";
 
 interface FullPageLayoutProps {
@@ -169,7 +169,7 @@ export default function FullPageLayout({ children }: FullPageLayoutProps) {
   return (
     <React.Fragment>
       {children}
-      <AppConfig minimal />
+      <profissionais minimal />
     </React.Fragment>
   );
 }

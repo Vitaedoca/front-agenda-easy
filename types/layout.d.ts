@@ -52,8 +52,8 @@ export interface MenuContextProps {
     setActiveMenu: Dispatch<SetStateAction<string>>;
 }
 
-/* AppConfig Types */
-export interface AppConfigProps {
+/* profissionais Types */
+export interface profissionaisProps {
     simple?: boolean;
 }
 

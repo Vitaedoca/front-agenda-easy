@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import AppConfig from '../../layout/AppConfig';
+import profissionais from '../../layout/profissionais';
 import React from 'react';
 
 interface SimpleLayoutProps {
@@ -15,7 +15,7 @@ export default function SimpleLayout({ children }: SimpleLayoutProps) {
     return (
         <React.Fragment>
             {children}
-            <AppConfig simple />
+            <profissionais simple />
         </React.Fragment>
     );
 }

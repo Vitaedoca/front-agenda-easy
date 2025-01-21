@@ -7,10 +7,10 @@ import { RadioButton, RadioButtonChangeEvent } from 'primereact/radiobutton';
 import { Sidebar } from 'primereact/sidebar';
 import { classNames } from 'primereact/utils';
 import React, { useContext, useEffect, useState } from 'react';
-import { AppConfigProps, LayoutConfig, LayoutState } from '@/types';
+import { profissionaisProps, LayoutConfig, LayoutState } from '@/types';
 import { LayoutContext } from './context/layoutcontext';
 
-const AppConfig = (props: AppConfigProps) => {
+const profissionais = (props: profissionaisProps) => {
     const [scales] = useState([12, 13, 14, 15, 16]);
     const { layoutConfig, setLayoutConfig, layoutState, setLayoutState } = useContext(LayoutContext);
     const { setRipple, changeTheme } = useContext(PrimeReactContext);
@@ -247,4 +247,4 @@ const AppConfig = (props: AppConfigProps) => {
     );
 };
 
-export default AppConfig;
+export default profissionais;
